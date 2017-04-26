@@ -19,9 +19,11 @@ func TestTxnDBCRUDAndCommitRollback(t *testing.T) {
 	var (
 		givenKey1 = []byte("hello")
 		givenKey2 = []byte("foo")
+		givenKey3 = []byte("foo2")
 		givenVal1 = []byte("world1")
 		givenVal2 = []byte("world2")
 		givenVal3 = []byte("bar")
+		givenVal4 = []byte("bar2")
 		wo	  = NewDefaultWriteOptions()
 		ro	  = NewDefaultReadOptions()
 		to	  = NewDefaultTxnOptions()
@@ -45,12 +47,35 @@ func TestTxnDBCRUDAndCommitRollback(t *testing.T) {
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, v2.Data(), givenVal2)
 
-/*	// delete
+        // iterate
+	iter := txn.NewTxnIterator(ro)
+	iter.SeekToFirst()
+	ensure.True(t, iter.Valid())
+	ensure.DeepEqual(t, iter.Key().Data(), givenKey2)
+	ensure.DeepEqual(t, iter.Value().Data(), givenVal3)
+	ensure.Nil(t, iter.Err())
+	iter.Close()
+
+	// delete
 	ensure.Nil(t, txn.TxnDelete(givenKey1))
 	v3, err := txn.TxnGet(ro, givenKey1)
 	ensure.Nil(t, err)
 	ensure.True(t, v3.Data() == nil)
-*/
+
+	// snapshot (repeatable reads)
+	ensure.Nil(t, txn_db.TxnDBPut(wo, givenKey3, givenVal4))
+	snap := txn_db.NewTxnDBSnapshot()
+	ro.SetSnapshot(&Snapshot{c: snap.c})
+	ensure.Nil(t, txn_db.TxnDBDelete(wo, givenKey3))
+	v6, err := txn.TxnGet(ro, givenKey3)
+	ensure.Nil(t, err)
+	ensure.DeepEqual(t, v6.Data(), givenVal4)
+	ro.SetSnapshot(txn_db.nilSnapshot)
+	//ro.SetSnapshot(&Snapshot{c: nil, cDb: nil,})
+	snap.TxnDBRelease()
+	v6, err = txn.TxnGet(ro, givenKey3)
+	ensure.Nil(t, err)
+	ensure.True(t, v6.Data() == nil)
 
 	// commit transaction
 	ensure.Nil(t, txn.Commit())

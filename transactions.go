@@ -10,10 +10,11 @@ import (
 
 // TxnDB is a reusable handle to a TransactionDB database on disk, created by OpenTxnDb.
 type TxnDB struct {
-	c	 *C.rocksdb_transactiondb_t
-	name	 string
-	opts	 *Options
-	txn_db_opts *TxnDBOptions
+	c		*C.rocksdb_transactiondb_t
+	name		 string
+	opts		*Options
+	txn_db_opts	*TxnDBOptions
+	nilSnapshot	*Snapshot
 }
 
 // Txn is a reusable handle to a Transaction
@@ -21,6 +22,12 @@ type Txn struct {
 	c	 *C.rocksdb_transaction_t
 	opts	 *WriteOptions
 	txn_opts *TxnOptions
+}
+
+// TxnDBSnapshot provides a consistent view of read operations in a TransactionDB
+type TxnDBSnapshot struct {
+	c	*C.rocksdb_snapshot_t
+	cTxnDb	*C.rocksdb_transactiondb_t
 }
 
 // OpenTxnDb opens a TransactionDB database with the specified options.
@@ -40,6 +47,7 @@ func OpenTxnDb(opts *Options, txn_db_opts *TxnDBOptions, name string) (*TxnDB, e
 		c:    txn_db,
 		opts: opts,
 		txn_db_opts: txn_db_opts,
+		nilSnapshot: &Snapshot{c: nil, cDb: nil},
 	}, nil
 }
 
@@ -54,7 +62,24 @@ func (txn_db *TxnDB) TxnDBName() string {
 	return txn_db.name
 }
 
-// Begin begins and returns a rocksdb transaction
+//NewTxnDBSnapshot creates a new snapshot of the TransactionDB database.
+func (txn_db *TxnDB) NewTxnDBSnapshot() *TxnDBSnapshot {
+	cSnap := C.rocksdb_transactiondb_create_snapshot(txn_db.c)
+	return NewTxnDBNativeSnapshot(cSnap, txn_db.c)
+}
+
+// NewTxnDBNativeSnapshot creates a TxnDBSnapshot object.
+func NewTxnDBNativeSnapshot(c *C.rocksdb_snapshot_t, cTxnDb *C.rocksdb_transactiondb_t) *TxnDBSnapshot {
+	return &TxnDBSnapshot{c, cTxnDb}
+}
+
+// TxnDBRelease removes the snapshot from the TransactionDB's list of snapshots
+func (s *TxnDBSnapshot) TxnDBRelease() {
+	C.rocksdb_transactiondb_release_snapshot(s.cTxnDb, s.c)
+	s.c, s.cTxnDb = nil, nil
+}
+
+// Begin begins and returns a rocksdb transaction.
 func (txn_db *TxnDB) Begin(opts *WriteOptions, txn_opts *TxnOptions, old_txn *Txn) *Txn {
 	var cTxn  *C.rocksdb_transaction_t
 	if old_txn != nil {
@@ -151,9 +176,57 @@ func (txn *Txn) TxnPut(key, value []byte) error {
 	return nil
 }
 
-// Delete
+// TxnDBPut writes data associated with a key to the database, from outside a transaction
+func (txn_db *TxnDB) TxnDBPut(opts *WriteOptions, key, value []byte) error {
+		var (
+			cErr	*C.char
+			cKey	= byteToChar(key)
+			cValue	= byteToChar(value)
+		)
+		C.rocksdb_transactiondb_put(txn_db.c, opts.c, cKey, C.size_t(len(key)), cValue, C.size_t(len(value)), &cErr)
+	if cErr != nil {
+		defer C.free(unsafe.Pointer(cErr))
+		return errors.New(C.GoString(cErr))
+	}
+	return nil
+
+}
+
+// TxnDelete deletes a key from the database, within a transaction
+func (txn *Txn) TxnDelete(key []byte) error {
+	var (
+		cErr	*C.char
+		cKey	= byteToChar(key)
+	)
+	C.rocksdb_transaction_delete(txn.c, cKey, C.size_t(len(key)), &cErr)
+	if cErr != nil {
+		defer C.free(unsafe.Pointer(cErr))
+		return errors.New(C.GoString(cErr))
+	}
+	return nil
+
+}
+
+// TxnDBDelete deletes a key from the database, from outside a transaction
+func (txn_db *TxnDB) TxnDBDelete(opts *WriteOptions, key []byte) error {
+	var (
+		cErr	*C.char
+		cKey	= byteToChar(key)
+	)
+	C.rocksdb_transactiondb_delete(txn_db.c, opts.c, cKey, C.size_t(len(key)), &cErr)
+	if cErr != nil {
+		defer C.free(unsafe.Pointer(cErr))
+		return errors.New(C.GoString(cErr))
+	}
+	return nil
+}
+
 
 // Iterate
+func (txn *Txn) NewTxnIterator(opts *ReadOptions) *Iterator {
+	cIter := C.rocksdb_transaction_create_iterator(txn.c, opts.c)
+	return NewNativeIterator(unsafe.Pointer(cIter))
+}
 
 // Commit commits the rocksdb Transaction
 func (txn *Txn) Commit() error {

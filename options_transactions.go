@@ -21,8 +21,9 @@ func NewNativeTxnDBOptions(c *C.rocksdb_transactiondb_options_t) *TxnDBOptions {
 // SetMaxNumLocks specifies the maximum number of keys that can be locked at the same
 // time per column family.
 // If the number of locked keys is greater than max_num_locks, transaction
-// writes (or GetForUpdate) will return an error.
+// writes will return an error.
 // If this value is not positive, no limit will be enforced.
+// Default: -1
 func (txn_db_opts  *TxnDBOptions) SetMaxNumLocks(value int64) {
 	C.rocksdb_transactiondb_options_set_max_num_locks(txn_db_opts.c, C.int64_t(value))
 }
@@ -30,6 +31,7 @@ func (txn_db_opts  *TxnDBOptions) SetMaxNumLocks(value int64) {
 // SetNumStripes sets the concurrency by dividing the lock table (per column family) 
 // into more sub-tables, each with their own separate mutex.
 // Increasing it increases the concurrency
+// Default: 16
 func (txn_db_opts *TxnDBOptions) SetNumStripes(value int) {
 	C.rocksdb_transactiondb_options_set_num_stripes(txn_db_opts.c, C.size_t(value))
 }
@@ -41,6 +43,7 @@ func (txn_db_opts *TxnDBOptions) SetNumStripes(value int) {
 // If negative, there is no timeout.  Not using a timeout is not recommended
 // as it can lead to deadlocks.  Currently, there is no deadlock-detection to
 // recover from a deadlock.
+// Default: 1000
 func (txn_db_opts *TxnDBOptions) SetTransactionLockTimeout(value int64) {
 	C.rocksdb_transactiondb_options_set_transaction_lock_timeout(txn_db_opts.c, C.int64_t(value))
 }
@@ -57,6 +60,7 @@ func (txn_db_opts *TxnDBOptions) SetTransactionLockTimeout(value int64) {
 // cannot deadlock with other DB writes, they can deadlock with a transaction.
 // A negative timeout should only be used if all transactions have a small
 // expiration set.
+// Default: 1000
 func (txn_db_opts *TxnDBOptions) SetDefaultLockTimeout(value int64) {
 	C.rocksdb_transactiondb_options_set_default_lock_timeout(txn_db_opts.c, C.int64_t(value))
 }
@@ -91,6 +95,7 @@ func NewNativeTxnOptions(c *C.rocksdb_transaction_options_t) *TxnOptions {
 // Using SetSnapshot() will provide stricter isolation guarantees at the
 // expense of potentially more transaction failures due to conflicts with
 // other writes.
+// Default: false
 func (txn_opts *TxnOptions) SetSnapshot(value bool) {
 	C.rocksdb_transaction_options_set_set_snapshot(txn_opts.c, boolToChar(value))
 }
@@ -100,6 +105,7 @@ func (txn_opts *TxnOptions) SetSnapshot(value bool) {
 // SetDeadlockDetect when the value is true, means that before acquiring locks, 
 // this transaction will check if doing so will cause a deadlock. 
 // If so, it will return with Status::Busy. The user should retry their transaction.
+// Default: false
 func (txn_opts *TxnOptions) SetDeadlockDetect(value bool) {
 	C.rocksdb_transaction_options_set_deadlock_detect(txn_opts.c, boolToChar(value))
 }
@@ -110,6 +116,7 @@ func (txn_opts *TxnOptions) SetDeadlockDetect(value bool) {
 // If 0, no waiting is done if a lock cannot instantly be acquired.
 // If negative, the value set by TxnBOptions.SetTransactionLockTimeout()
 //  will be used.
+// Default: -1
 func (txn_opts *TxnOptions) SetLockTimeout(value int64) {
 	C.rocksdb_transaction_options_set_lock_timeout(txn_opts.c, C.int64_t(value))
 }
@@ -119,12 +126,14 @@ func (txn_opts *TxnOptions) SetLockTimeout(value int64) {
 // will fail to commit.  If not set, a forgotten transaction that is never committed,
 // rolled back, or deleted will never relinquish any locks it holds.  
 // This could prevent keys from being written by other writers.
+// Default: -1
 func (txn_opts *TxnOptions) SetExpiration(value int64) {
 	C.rocksdb_transaction_options_set_expiration(txn_opts.c, C.int64_t(value))
 }
 
 // SetDeadlockDetectdepth sets the number of traversals to make during deadlock 
 // detection.
+// Default: 50
 func (txn_opts *TxnOptions) SetDeadlockDetectDepth(value int64) {
 	C.rocksdb_transaction_options_set_deadlock_detect_depth(txn_opts.c, C.int64_t(value))
 }
@@ -132,6 +141,7 @@ func (txn_opts *TxnOptions) SetDeadlockDetectDepth(value int64) {
 /*
 // SetMaxWriteBatchSize sets the maximum number of bytes used for the write batch.
 // 0 means no limit.
+// Default: 0
 func (txn_opts *TxnOptions) SetMaxWriteBatchSize(value int) {
 	C.rocksdb_transaction_options_set_max_write_batch_size(txn_opts.c, C.size_t(value))
 }
