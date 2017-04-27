@@ -79,6 +79,17 @@ func (s *TxnDBSnapshot) TxnDBRelease() {
 	s.c, s.cTxnDb = nil, nil
 }
 
+// NewTxnDBCheckpointObject creates a new checkpoint object, used to create checkpoints of the database
+func (txn_db *TxnDB) NewTxnDBCheckpointObject() (*Checkpoint, error) {
+        var cErr *C.char
+        cCheckpoint := C.rocksdb_checkpoint_object_create(txn_db.c, &cErr)
+        if cErr != nil {
+                defer C.free(unsafe.Pointer(cErr))
+                return nil, errors.New(C.GoString(cErr))
+        }
+        return &Checkpoint{c: cCheckpoint}, nil
+}
+
 // Begin begins and returns a rocksdb transaction.
 func (txn_db *TxnDB) Begin(opts *WriteOptions, txn_opts *TxnOptions, old_txn *Txn) *Txn {
 	var cTxn  *C.rocksdb_transaction_t

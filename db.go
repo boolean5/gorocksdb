@@ -383,6 +383,18 @@ func (db *DB) NewSnapshot() *Snapshot {
 	return NewNativeSnapshot(cSnap, db.c)
 }
 
+// NewCheckpointObject creates a new checkpoint object, used to create checkpoints
+// of the database
+func (db *DB) NewCheckpointObject() (*Checkpoint, error) {
+	var cErr *C.char
+	cCheckpoint := C.rocksdb_checkpoint_object_create(db.c, &cErr)
+	if cErr != nil {
+		defer C.free(unsafe.Pointer(cErr))
+		return nil, errors.New(C.GoString(cErr))
+	}
+	return &Checkpoint{c: cCheckpoint}, nil
+}
+
 // GetProperty returns the value of a database property.
 func (db *DB) GetProperty(propName string) string {
 	cprop := C.CString(propName)
