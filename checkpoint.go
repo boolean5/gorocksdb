@@ -14,6 +14,7 @@ type Checkpoint struct {
 }
 
 // Create builds an openable snapshot of RocksDB on the same disk.
+// The directory should not already exist and should be an absolute path.
 func (c *Checkpoint) Create(checkpointDir string) error {
 	var (
 		cErr *C.char
