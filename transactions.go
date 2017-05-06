@@ -79,10 +79,14 @@ func (s *TxnDBSnapshot) TxnDBRelease() {
 	s.c, s.cTxnDb = nil, nil
 }
 
+func (opts *ReadOptions) SetTxnDBSnapshot(snap *TxnDBSnapshot) {
+	C.rocksdb_readoptions_set_snapshot(opts.c, snap.c)
+}
+
 // NewTxnDBCheckpointObject creates a new checkpoint object, used to create checkpoints of the database
 func (txn_db *TxnDB) NewTxnDBCheckpointObject() (*Checkpoint, error) {
         var cErr *C.char
-        cCheckpoint := C.rocksdb_checkpoint_object_create(txn_db.c, &cErr)
+        cCheckpoint := C.rocksdb_transactiondb_checkpoint_object_create(txn_db.c, &cErr)
         if cErr != nil {
                 defer C.free(unsafe.Pointer(cErr))
                 return nil, errors.New(C.GoString(cErr))
@@ -154,7 +158,7 @@ func (txn_db *TxnDB) TxnDBGet(opts *ReadOptions, key []byte) (*Slice, error) {
 	return NewSlice(cValue, cValLen), nil
 }
 // TxnDBGetBytes is like Get but returns a copy of the data.
-func (txn_db *Txn) TxnDBGetBytes(opts *ReadOptions, key []byte) ([]byte, error) {
+func (txn_db *TxnDB) TxnDBGetBytes(opts *ReadOptions, key []byte) ([]byte, error) {
 	var (
 		cErr	*C.char
 		cValLen	C.size_t
