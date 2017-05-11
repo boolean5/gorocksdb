@@ -384,7 +384,7 @@ func (db *DB) NewSnapshot() *Snapshot {
 }
 
 // NewCheckpointObject creates a new checkpoint object, used to create checkpoints
-// of the database
+// of the database.
 func (db *DB) NewCheckpointObject() (*Checkpoint, error) {
 	var cErr *C.char
 	cCheckpoint := C.rocksdb_checkpoint_object_create(db.c, &cErr)

@@ -29,12 +29,12 @@ func TestCheckpoint(t *testing.T) {
 	ensure.Nil(t, checkpoint.Create("gorocksdb-Checkpoint"))
 
 	// open a new database from the checkpoint
-	new_db, err := OpenDb(opts, "gorocksdb-Checkpoint")
+	newDB, err := OpenDb(opts, "gorocksdb-Checkpoint")
 	ensure.Nil(t,err)
-	defer new_db.Close()
+	defer newDB.Close()
 
 	// retrieve key
-	v, err := new_db.Get(ro, givenKey)
+	v, err := newDB.Get(ro, givenKey)
 	defer v.Free()
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, v.Data(), givenVal)
