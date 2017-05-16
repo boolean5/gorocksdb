@@ -85,13 +85,16 @@ func TestTxnDBCRUDAndCommitRollback(t *testing.T) {
 	ensure.DeepEqual(t, v4.Data(), givenVal3)
 
 	// rollback
-	txn2 := txnDB.Begin(wo, to, txn)
+	txn = txnDB.Begin(wo, to, txn)
 	ensure.Nil(t, txn.Put(givenKey2, givenVal1))
-	ensure.Nil(t, txn2.Rollback())
+	ensure.Nil(t, txn.Rollback())
 	v5, err := txnDB.Get(ro, givenKey2)
 	defer v5.Free()
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, v5.Data(), givenVal3)
+
+	// deallocate transaction
+	txn.Destroy()
 }
 
 func newTestTxnDB(t *testing.T, name string, applyOpts func(opts *Options, txnDBOpts *TxnDBOptions)) *TxnDB {

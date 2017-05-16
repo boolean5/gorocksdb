@@ -114,6 +114,34 @@ func (txnDB *TxnDB) Begin(opts *WriteOptions, txnOpts *TxnOptions, oldTxn *Txn) 
 	}
 }
 
+// Commit commits the rocksdb Transaction.
+func (txn *Txn) Commit() error {
+	var cErr	*C.char
+	C.rocksdb_transaction_commit(txn.c, &cErr)
+	if cErr != nil {
+		defer C.free(unsafe.Pointer(cErr))
+		return errors.New(C.GoString(cErr))
+	}
+	return nil
+}
+
+// Rollback rolls back the rocksdb Transaction.
+func (txn *Txn) Rollback() error {
+	var cErr	*C.char
+	C.rocksdb_transaction_rollback(txn.c, &cErr)
+	if cErr != nil {
+		defer C.free(unsafe.Pointer(cErr))
+		return errors.New(C.GoString(cErr))
+	}
+	return nil
+}
+
+// Destroy deallocates the rocksdb Transaction.
+func (txn *Txn) Destroy() {
+	C.rocksdb_transaction_destroy(txn.c)
+	txn.c = nil
+}
+
 // Get returns the data associated with the key, from within a transaction.
 func (txn *Txn) Get(opts *ReadOptions, key []byte) (*Slice, error) {
 	var (
@@ -247,28 +275,6 @@ func (txnDB *TxnDB) Delete(opts *WriteOptions, key []byte) error {
 func (txn *Txn) NewIterator(opts *ReadOptions) *Iterator {
 	cIter := C.rocksdb_transaction_create_iterator(txn.c, opts.c)
 	return NewNativeIterator(unsafe.Pointer(cIter))
-}
-
-// Commit commits the rocksdb Transaction.
-func (txn *Txn) Commit() error {
-	var cErr	*C.char
-	C.rocksdb_transaction_commit(txn.c, &cErr)
-	if cErr != nil {
-		defer C.free(unsafe.Pointer(cErr))
-		return errors.New(C.GoString(cErr))
-	}
-	return nil
-}
-
-// Rollback rolls back the rocksdb Transaction.
-func (txn *Txn) Rollback() error {
-	var cErr	*C.char
-	C.rocksdb_transaction_rollback(txn.c, &cErr)
-	if cErr != nil {
-		defer C.free(unsafe.Pointer(cErr))
-		return errors.New(C.GoString(cErr))
-	}
-	return nil
 }
 
 // Close closes the TransactionDB database.
