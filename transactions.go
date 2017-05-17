@@ -140,6 +140,8 @@ func (txn *Txn) Rollback() error {
 func (txn *Txn) Destroy() {
 	C.rocksdb_transaction_destroy(txn.c)
 	txn.c = nil
+	txn.opts = nil
+	txn.txnOpts = nil
 }
 
 // Get returns the data associated with the key, from within a transaction.
