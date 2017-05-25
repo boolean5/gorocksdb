@@ -62,6 +62,15 @@ func (txnDB *TxnDB) Name() string {
 	return txnDB.name
 }
 
+// GetProperty returns the value of a database property.
+func (txnDB *TxnDB) GetProperty(propName string) string {
+        cprop := C.CString(propName)
+        defer C.free(unsafe.Pointer(cprop))
+        cValue := C.rocksdb_transactiondb_property_value(txnDB.c, cprop)
+        defer C.free(unsafe.Pointer(cValue))
+        return C.GoString(cValue)
+}
+
 //NewTxnDBSnapshot creates a new snapshot of the TransactionDB database.
 func (txnDB *TxnDB) NewTxnDBSnapshot() *TxnDBSnapshot {
 	cSnap := C.rocksdb_transactiondb_create_snapshot(txnDB.c)
