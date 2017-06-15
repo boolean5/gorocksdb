@@ -54,7 +54,6 @@ func (c *Checkpoint) Create(checkpointDir string, logSizeForFlush uint64) error 
 	return nil
 }
 
-
 // Destroy deallocates the checkpoint object.
 func (c *Checkpoint) Destroy() {
 	C.rocksdb_checkpoint_object_destroy(c.c)

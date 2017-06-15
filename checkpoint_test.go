@@ -27,9 +27,9 @@ func TestCheckpoint(t *testing.T) {
 
 	// create an openable checkpoint of the database
 	// use this version when using rocksdb as a shared library
-	ensure.Nil(t, checkpoint.Create("gorocksdb-Checkpoint", 0))
+	// ensure.Nil(t, checkpoint.Create("gorocksdb-Checkpoint", 0))
 	// use this version when using rocksdb as an embedded library (c-rocksdb)
-	// ensure.Nil(t, checkpoint.Create("gorocksdb-Checkpoint"))
+	ensure.Nil(t, checkpoint.Create("gorocksdb-Checkpoint"))
 
 	// open a new database from the checkpoint
 	newDB, err := OpenDb(opts, "gorocksdb-Checkpoint")
