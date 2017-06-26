@@ -363,6 +363,17 @@ func (db *DB) Write(opts *WriteOptions, batch *WriteBatch) error {
 	return nil
 }
 
+// WriteWithIndex writes a WriteBatchWithIndex to the database
+func (db *DB) WriteWithIndex(opts *WriteOptions, batch *WriteBatchWithIndex) error {
+        var cErr *C.char
+        C.rocksdb_write_writebatch_wi(db.c, opts.c, batch.c, &cErr)
+        if cErr != nil {
+                defer C.free(unsafe.Pointer(cErr))
+                return errors.New(C.GoString(cErr))
+        }
+        return nil
+}
+
 // NewIterator returns an Iterator over the the database that uses the
 // ReadOptions given.
 func (db *DB) NewIterator(opts *ReadOptions) *Iterator {
