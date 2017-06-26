@@ -21,8 +21,8 @@ type TxnDB struct {
 // Txn is a reusable handle to a Transaction.
 type Txn struct {
 	c	 *C.rocksdb_transaction_t
-	opts	 *WriteOptions
-	txnOpts  *TxnOptions
+	opts	 *WriteOptions	// is this needed?
+	//txnOpts  *TxnOptions
 }
 
 // TxnDBSnapshot provides a consistent view of read operations in a TransactionDB.
@@ -119,7 +119,7 @@ func (txnDB *TxnDB) Begin(opts *WriteOptions, txnOpts *TxnOptions, oldTxn *Txn) 
 	return &Txn{
 		c:	cTxn,
 		opts:	opts,
-		txnOpts: txnOpts,
+	//	txnOpts: txnOpts,
 	}
 }
 
@@ -150,7 +150,7 @@ func (txn *Txn) Destroy() {
 	C.rocksdb_transaction_destroy(txn.c)
 	txn.c = nil
 	txn.opts = nil
-	txn.txnOpts = nil
+	//txn.txnOpts = nil
 }
 
 // Get returns the data associated with the key, from within a transaction.
