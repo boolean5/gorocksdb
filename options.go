@@ -96,6 +96,17 @@ func (opts *Options) SetCompactionFilter(value CompactionFilter) {
 	C.rocksdb_options_set_compaction_filter(opts.c, opts.ccf)
 }
 
+// SetCompactionReadaheadSize sets the readahead size for compaction.
+// If non-zero, bigger reads are performed when doing compaction. If you're
+// running RocksDB on spinning disks, you should set this to at least 2MB.
+// That way RocksDB's compaction is doing sequential instead of random reads.
+// When non-zero,  new_table_reader_for_compaction_inputs is also forced to
+// true.
+// Default: 0
+func (opts *Options) SetCompactionReadaheadSize(value int) {
+	C.rocksdb_options_compaction_readahead_size(opts.c, C.size_t(value))
+}
+
 // SetComparator sets the comparator which define the order of keys in the table.
 // Default: a comparator that uses lexicographic byte-wise ordering
 func (opts *Options) SetComparator(value Comparator) {
@@ -197,6 +208,10 @@ func (opts *Options) SetEnv(value *Env) {
 	C.rocksdb_options_set_env(opts.c, value.c)
 }
 
+func (opts *Options) GetEnv() *Env {
+	return opts.env
+}
+
 // SetInfoLogLevel sets the info log level.
 // Default: InfoInfoLogLevel
 func (opts *Options) SetInfoLogLevel(value InfoLogLevel) {
@@ -231,6 +246,16 @@ func (opts *Options) OptimizeForPointLookup(block_cache_size_mb uint64) {
 // if you use `OptimizeForPointLookup`.
 func (opts *Options) SetAllowConcurrentMemtableWrites(allow bool) {
 	C.rocksdb_options_set_allow_concurrent_memtable_write(opts.c, boolToChar(allow))
+}
+
+// SetEnableWriteThreadAdaptiveYield if set to true, makes threads 
+// synchronizing with the write batch group leader wait for up to 
+// write_thread_max_yield_usec before blocking on a mutex.
+// This can substantially improve throughput for concurrent workloads,
+// regardless of whether allow_concurrent_memtable_write is enabled.
+// Default: true
+func (opts *Options) SetEnableWriteThreadAdaptiveYield(enable bool) {
+	C.rocksdb_options_set_enable_write_thread_adaptive_yield(opts.c, boolToChar(enable))
 }
 
 // OptimizeLevelStyleCompaction optimize the DB for leveld compaction.
@@ -515,6 +540,14 @@ func (opts *Options) SetDeleteObsoleteFilesPeriodMicros(value uint64) {
 // Default: 1
 func (opts *Options) SetMaxBackgroundCompactions(value int) {
 	C.rocksdb_options_set_max_background_compactions(opts.c, C.int(value))
+}
+
+// SetMaxSubcompactions sets the maximum number of threads that will
+// concurrently perform a compaction job by breaking it into multiple,
+// smaller ones that are run simultaneously.
+// Default: 1 (i.e. no subcompactions)
+func (opts *Options) SetMaxSubcompactions(value int) {
+	C.rocksdb_options_set_max_subcompactions(opts.c, C.int(value))
 }
 
 // SetMaxBackgroundFlushes sets the maximum number of
@@ -909,6 +942,10 @@ func (opts *Options) SetCreateIfMissingColumnFamilies(value bool) {
 func (opts *Options) SetBlockBasedTableFactory(value *BlockBasedTableOptions) {
 	opts.bbto = value
 	C.rocksdb_options_set_block_based_table_factory(opts.c, value.c)
+}
+
+func (opts *Options) GetBlockBasedTableOptions() *BlockBasedTableOptions {
+	return opts.bbto
 }
 
 // Destroy deallocates the Options object.
