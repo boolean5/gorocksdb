@@ -62,7 +62,6 @@ func (txnDB *TxnDB) Name() string {
 	return txnDB.name
 }
 
-/*
 // GetProperty returns the value of a database property.
 func (txnDB *TxnDB) GetProperty(propName string) string {
         cprop := C.CString(propName)
@@ -71,7 +70,6 @@ func (txnDB *TxnDB) GetProperty(propName string) string {
         defer C.free(unsafe.Pointer(cValue))
         return C.GoString(cValue)
 }
-*/
 
 //NewTxnDBSnapshot creates a new snapshot of the TransactionDB database.
 func (txnDB *TxnDB) NewTxnDBSnapshot() *TxnDBSnapshot {
